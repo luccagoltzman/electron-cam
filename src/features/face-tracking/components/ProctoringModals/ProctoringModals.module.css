@@ -1,0 +1,77 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(2px);
+}
+
+.card {
+  max-width: 440px;
+  width: 100%;
+  background: #1a1d24;
+  border: 1px solid #3a4050;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.dqCard {
+  border-color: #8b3a3a;
+  max-width: 420px;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f9ab00;
+}
+
+.dqTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f28b82;
+}
+
+.body {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #e8eaed;
+}
+
+.strong {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #fdd663;
+  font-weight: 600;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #202124;
+  background: #8ab4f8;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(1.05);
+}
+
+.btn:focus-visible {
+  outline: 2px solid #e8eaed;
+  outline-offset: 2px;
+}

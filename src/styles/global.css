@@ -1,0 +1,20 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background: #0f1216;
+  color: #e8eaed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+}

@@ -1,0 +1,1 @@
+export { FaceTrackingView } from './FaceTrackingView';

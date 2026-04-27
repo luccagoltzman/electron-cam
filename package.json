@@ -1,0 +1,34 @@
+{
+  "name": "electron-cam",
+  "version": "1.0.0",
+  "description": "Webcam e rastreamento de cabeça/olhos com Electron",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "postinstall": "node scripts/copy-mediapipe-wasm.mjs",
+    "predev": "node scripts/copy-mediapipe-wasm.mjs",
+    "prebuild": "node scripts/copy-mediapipe-wasm.mjs",
+    "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV=1 electron .\"",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "electron .",
+    "start:debug": "cross-env ELECTRON_DEBUG=1 electron .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.0",
+    "wait-on": "^8.0.0"
+  }
+}

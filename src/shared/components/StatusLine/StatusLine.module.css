@@ -1,0 +1,11 @@
+.muted {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #9aa0a6;
+}
+
+.error {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #f28b82;
+}
