@@ -1,33 +1,19 @@
 import {
+  EYE_LOOK_HORIZONTAL_MAX,
   HEAD_SOFT_MAX_ABS_PITCH,
   HEAD_SOFT_MAX_ABS_ROLL,
   HEAD_SOFT_MAX_ABS_YAW,
 } from '../config/proctoring';
+import { extractGazeFromBlendshapes, type GazeBlendshapeScores } from './gazeBlendshapes';
 import type { HeadOrientationDegrees } from '../types';
-import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 
 export type AttentionInput = {
   hasFace: boolean;
   headOrientation: HeadOrientationDegrees | null;
-  /** Opcional: só para contagem no debug. */
-  faceLandmarks?: NormalizedLandmark[] | null;
+  /** Classifications do MediaPipe (faceBlendshapes[0]). */
+  faceBlendshapes?: { categories?: { categoryName?: string; score: number }[] } | null;
 };
 
-/**
- * Proctoring: limites P/Y/R. `deg === null` = não falha (frame sem matriz estável).
- */
-export function headAnglesWithinProctoringLimits(deg: HeadOrientationDegrees | null): boolean {
-  if (deg == null) return true;
-  const { pitch, yaw, roll } = deg;
-  if (Math.abs(yaw) > HEAD_SOFT_MAX_ABS_YAW) return false;
-  if (Math.abs(pitch) > HEAD_SOFT_MAX_ABS_PITCH) return false;
-  if (Math.abs(roll) > HEAD_SOFT_MAX_ABS_ROLL) return false;
-  return true;
-}
-
-/**
- * `true` em dev ou após `localStorage.setItem('proctoringDebug', '1')` (build empacotado).
- */
 export function proctoringDebugEnabled(): boolean {
   if (import.meta.env.DEV) return true;
   try {
@@ -37,87 +23,60 @@ export function proctoringDebugEnabled(): boolean {
   }
 }
 
+function headLookingAway(deg: HeadOrientationDegrees | null): boolean {
+  if (deg == null) return false;
+  if (Math.abs(deg.yaw) > HEAD_SOFT_MAX_ABS_YAW) return true;
+  if (Math.abs(deg.pitch) > HEAD_SOFT_MAX_ABS_PITCH) return true;
+  if (Math.abs(deg.roll) > HEAD_SOFT_MAX_ABS_ROLL) return true;
+  return false;
+}
+
+function eyesLookingAway(gaze: GazeBlendshapeScores | null): boolean {
+  if (gaze == null) return false;
+  // Só horizontal: olhar para baixo no ecrã é esperado com webcam no topo.
+  return gaze.horizontal > EYE_LOOK_HORIZONTAL_MAX;
+}
+
+/**
+ * Atento = rosto presente e NÃO (olhar lateral forte OU cabeça virada).
+ * Usa blendshapes `eyeLook*` do MediaPipe + yaw/pitch/roll da matriz.
+ */
+export function isLookingAtScreen(input: AttentionInput): boolean {
+  if (!input.hasFace) return false;
+  const gaze = extractGazeFromBlendshapes(input.faceBlendshapes);
+  if (eyesLookingAway(gaze)) return false;
+  if (headLookingAway(input.headOrientation)) return false;
+  return true;
+}
+
 export type AttentionDebugSnapshot = {
   hasFace: boolean;
-  landmarkCount: number;
-  headPass: boolean | null;
+  gaze: GazeBlendshapeScores | null;
   headDeg: HeadOrientationDegrees | null;
-  headNotes: string[];
+  eyesAway: boolean;
+  headAway: boolean;
   isLookingAtScreen: boolean;
   resumo: string;
 };
 
-/**
- * Depuração: por que caiu em “não atento” (cabeça fora do limite ou sem rosto).
- */
-export function getAttentionDebugSnapshot({
-  hasFace,
-  headOrientation,
-  faceLandmarks,
-}: AttentionInput): AttentionDebugSnapshot {
-  const landmarkCount = faceLandmarks?.length ?? 0;
+export function getAttentionDebugSnapshot(input: AttentionInput): AttentionDebugSnapshot {
+  const gaze = extractGazeFromBlendshapes(input.faceBlendshapes);
+  const eyesAway = eyesLookingAway(gaze);
+  const headAway = headLookingAway(input.headOrientation);
+  const looking = isLookingAtScreen(input);
 
-  const headNotes: string[] = [];
-  let headPass: boolean | null = null;
-  if (headOrientation == null) {
-    headPass = true;
-    headNotes.push('sem matriz P/Y/R neste frame – contado como OK');
-  } else {
-    const { pitch, yaw, roll } = headOrientation;
-    headPass = true;
-    if (Math.abs(yaw) > HEAD_SOFT_MAX_ABS_YAW) {
-      headPass = false;
-      headNotes.push(
-        `yaw fora: |${yaw.toFixed(1)}°| > ${HEAD_SOFT_MAX_ABS_YAW}°`
-      );
-    }
-    if (Math.abs(pitch) > HEAD_SOFT_MAX_ABS_PITCH) {
-      headPass = false;
-      headNotes.push(
-        `pitch fora: |${pitch.toFixed(1)}°| > ${HEAD_SOFT_MAX_ABS_PITCH}°`
-      );
-    }
-    if (Math.abs(roll) > HEAD_SOFT_MAX_ABS_ROLL) {
-      headPass = false;
-      headNotes.push(
-        `roll fora: |${roll.toFixed(1)}°| > ${HEAD_SOFT_MAX_ABS_ROLL}°`
-      );
-    }
-    if (headPass) headNotes.push('P/Y/R dentro do limite');
-  }
-
-  if (!hasFace) {
-    return {
-      hasFace: false,
-      landmarkCount,
-      headPass: null,
-      headDeg: headOrientation,
-      headNotes: ['N/A: sem rosto no frame'],
-      isLookingAtScreen: false,
-      resumo: 'hasFace = false',
-    };
-  }
-
-  const isLooking = isLookingAtScreen({ hasFace, headOrientation, faceLandmarks });
-  const resumo = isLooking
-    ? 'atento: cabeça (P/Y/R)'
-    : headPass === false
-      ? 'não atento: cabeça (ver headNotes)'
-      : 'não atento: inconsistência';
+  let resumo = 'atento';
+  if (!input.hasFace) resumo = 'sem rosto';
+  else if (eyesAway) resumo = `olhar lateral (h=${gaze?.horizontal.toFixed(2)})`;
+  else if (headAway) resumo = 'cabeça virada';
 
   return {
-    hasFace: true,
-    landmarkCount,
-    headPass,
-    headDeg: headOrientation,
-    headNotes,
-    isLookingAtScreen: isLooking,
+    hasFace: input.hasFace,
+    gaze,
+    headDeg: input.headOrientation,
+    eyesAway,
+    headAway,
+    isLookingAtScreen: looking,
     resumo,
   };
-}
-
-/** Atenção na tela: rosto detetado + cabeça dentro dos limites (íris não entra). */
-export function isLookingAtScreen({ hasFace, headOrientation }: AttentionInput): boolean {
-  if (!hasFace) return false;
-  return headAnglesWithinProctoringLimits(headOrientation);
 }

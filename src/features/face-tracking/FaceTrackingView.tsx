@@ -2,8 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { AppHeader, MetricRow, Panel, StatusLine } from '@shared/components';
 import { ProctoringModals } from './components/ProctoringModals/ProctoringModals';
 import {
-  HEAD_SOFT_MAX_ABS_PITCH,
-  HEAD_SOFT_MAX_ABS_ROLL,
+  EYE_LOOK_HORIZONTAL_MAX,
   HEAD_SOFT_MAX_ABS_YAW,
   INATTENTION_THRESHOLD_MS,
   PROCTORING_CAPTURE_DURATION_MS,
@@ -36,7 +35,7 @@ function useStatusLine(
     }
     if (!camReady) return { text: 'Abrindo câmera…', err: false };
     return {
-      text: 'Prova/atividade: mantenha a cabeça de frente ao ecrã. Monitoramento por pose ativo.',
+      text: 'Prova/atividade: olhe para a tela. Mais de 15 s sem olhar gera alerta de possível pesca.',
       err: false,
     };
   }, [camError, camReady, lmError, phase, disqualified]);
@@ -49,7 +48,7 @@ export function FaceTrackingView() {
 
   const { landmarker, error: lmError, phase } = useFaceLandmarkerModel();
   const { ready: camReady, error: camError } = useUserMediaStream(video, DEFAULT_USER_MEDIA);
-  const { strikeCount, disqualified, openWarning, acknowledgeWarning, processFrame } =
+  const { strikeCount, disqualified, openWarning, acknowledgeWarning, processFrame, live } =
     useInattentionStrikes();
   const {
     status: captureStatus,
@@ -95,16 +94,26 @@ export function FaceTrackingView() {
           </Panel>
           <Panel title="Proctoring" className={styles.hud}>
             <MetricRow
+              label="Status"
+              value={
+                live.attentive
+                  ? 'Atento (olhando para a tela)'
+                  : live.awayMs > 0
+                    ? `Sem olhar — ${(live.awayMs / 1000).toFixed(1)}s / ${live.thresholdMs / 1000}s`
+                    : 'Sem olhar (estabilizando…)'
+              }
+            />
+            <MetricRow
               label="Critério"
-              value="Cabeça P/Y/R — matriz MediaPipe, ou estimativa 2D (nariz/olhos) se a matriz faltar"
+              value="MediaPipe eyeLook* (olhar lateral) + yaw da cabeça — olhar para baixo no ecrã é OK"
             />
             <MetricRow
-              label="Limites: |yaw| / |pitch| / |roll| (máx °)"
-              value={`${HEAD_SOFT_MAX_ABS_YAW} / ${HEAD_SOFT_MAX_ABS_PITCH} / ${HEAD_SOFT_MAX_ABS_ROLL}`}
+              label="Limites: olhar lateral / |yaw|°"
+              value={`${EYE_LOOK_HORIZONTAL_MAX} / ${HEAD_SOFT_MAX_ABS_YAW}`}
             />
             <MetricRow
-              label="Janela de inattenção (limite)"
-              value={`${INATTENTION_THRESHOLD_MS / 1000} s contínuos`}
+              label="Alerta de possível pesca"
+              value={`após ${INATTENTION_THRESHOLD_MS / 1000} s sem olhar para a tela`}
             />
             <MetricRow label="Ocorrências" value={String(strikeCount)} />
             <div className={styles.captureRow}>

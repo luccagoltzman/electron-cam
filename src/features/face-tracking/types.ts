@@ -25,6 +25,8 @@ export type ProctoringFrameSample = {
   hasFace: boolean;
   headOrientation: HeadOrientationDegrees | null;
   faceLandmarks: NormalizedLandmark[] | null;
+  /** Blendshapes MediaPipe (eyeLook*, etc.) — classificação 0 do resultado. */
+  faceBlendshapes: { categories?: { categoryName?: string; score: number }[] } | null;
   now: number;
   /** Falso enquanto câmera/modelo não estão prontos — não acumula inattenção. */
   isSessionActive: boolean;

@@ -18,32 +18,34 @@ export function ProctoringModals({
   disqualified,
   strikeCount,
 }: ProctoringModalsProps) {
+  const remaining =
+    MAX_STRIKES_BEFORE_DISQUALIFICATION - strikeCount;
+
   return (
     <>
       {openWarning != null && (
-        <div className={styles.scrim} role="alertdialog" aria-modal="true" aria-labelledby="proctoring-title">
+        <div
+          className={styles.scrim}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="proctoring-title"
+        >
           <div className={styles.card}>
             <h2 id="proctoring-title" className={styles.title}>
-              Atenção
+              Alerta de possível pesca
             </h2>
-            {openWarning === 1 && (
-              <p className={styles.body}>
-                O sistema detectou que a posição da sua cabeça permaneceu fora do limite permitido
-                (virada de forma acentuada em relação ao ecrã) por mais de{' '}
-                {INATTENTION_THRESHOLD_SECONDS} segundos.
-              </p>
-            )}
+            <p className={styles.body}>
+              O sistema detectou que você ficou mais de {INATTENTION_THRESHOLD_SECONDS} segundos
+              sem olhar diretamente para a tela. Isso pode indicar tentativa de pesca (consultar
+              material ou outra pessoa fora do alcance da prova).
+            </p>
             {openWarning === 2 && (
-              <p className={styles.body}>
-                Foi identificado o mesmo padrão novamente. Este é o segundo aviso.
-              </p>
+              <p className={styles.body}>Este é o segundo alerta do mesmo comportamento.</p>
             )}
             <p className={styles.strong}>
-              {MAX_STRIKES_BEFORE_DISQUALIFICATION - strikeCount === 1
+              {remaining === 1
                 ? 'Se o sistema detectar mais 1 vez o mesmo comportamento, você será desclassificado.'
-                : `Se o sistema detectar por mais ${
-                    MAX_STRIKES_BEFORE_DISQUALIFICATION - strikeCount
-                  } vezes o mesmo comportamento, você será desclassificado.`}
+                : `Se o sistema detectar por mais ${remaining} vezes o mesmo comportamento, você será desclassificado.`}
             </p>
             <button type="button" className={styles.btn} onClick={onAcknowledgeWarning}>
               Estou ciente
@@ -53,14 +55,19 @@ export function ProctoringModals({
       )}
 
       {disqualified && (
-        <div className={styles.scrim} role="alertdialog" aria-modal="true" aria-labelledby="dq-title">
+        <div
+          className={styles.scrim}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="dq-title"
+        >
           <div className={`${styles.card} ${styles.dqCard}`}>
             <h2 id="dq-title" className={styles.dqTitle}>
               Desclassificação
             </h2>
             <p className={styles.body}>
-              A candidatura seguiu a conduta indevida o número máximo de vezes permitido. Sua sessão
-              de prova ou atividade foi encerrada com desclassificação.
+              O sistema registrou possíveis indícios de pesca o número máximo de vezes permitido.
+              Sua sessão de prova ou atividade foi encerrada com desclassificação.
             </p>
           </div>
         </div>

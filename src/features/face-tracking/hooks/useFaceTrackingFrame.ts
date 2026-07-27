@@ -78,6 +78,7 @@ export function useFaceTrackingFrame(
         hasFace: false,
         headOrientation: null,
         faceLandmarks: null,
+        faceBlendshapes: null,
         now,
         isSessionActive: false,
       });
@@ -180,10 +181,12 @@ export function useFaceTrackingFrame(
       }
 
       const session = sessionRef.current?.current ?? true;
+      const blend = res.faceBlendshapes?.[0] ?? null;
       onProctoringRef.current?.({
         hasFace: face != null,
         headOrientation: face != null ? headEmaRef.current : null,
         faceLandmarks: face != null ? face : null,
+        faceBlendshapes: blend,
         now,
         isSessionActive: session,
       });

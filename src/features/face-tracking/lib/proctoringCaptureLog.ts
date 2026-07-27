@@ -1,4 +1,5 @@
-import { headAnglesWithinProctoringLimits, isLookingAtScreen } from './attentionHeuristic';
+import { isLookingAtScreen } from './attentionHeuristic';
+import { extractGazeFromBlendshapes } from './gazeBlendshapes';
 import type { ProctoringFrameSample } from '../types';
 
 export type ProctoringCaptureEntry = {
@@ -8,36 +9,37 @@ export type ProctoringCaptureEntry = {
   pitch: number | null;
   yaw: number | null;
   roll: number | null;
-  headOK: boolean | null;
+  eyeHorizontal: number | null;
   attentive: boolean;
 };
 
-const mode = { proctoring: 'head_pose_only' as const };
-
 /**
- * Uma amostra compacta para exportar (JSON) — só cabeça (P/Y/R).
+ * Uma amostra compacta para exportar (JSON).
  */
 export function buildProctoringCaptureEntry(
   sample: ProctoringFrameSample,
   t0: number
 ): ProctoringCaptureEntry {
   const h = sample.headOrientation;
-  const headOK = headAnglesWithinProctoringLimits(h);
+  const gaze = extractGazeFromBlendshapes(sample.faceBlendshapes);
   return {
     tOffsetMs: Math.round(sample.now - t0),
     hasFace: sample.hasFace,
     pitch: h?.pitch ?? null,
     yaw: h?.yaw ?? null,
     roll: h?.roll ?? null,
-    headOK: sample.hasFace ? headOK : null,
+    eyeHorizontal: gaze?.horizontal ?? null,
     attentive: isLookingAtScreen({
       hasFace: sample.hasFace,
       headOrientation: sample.headOrientation,
-      faceLandmarks: sample.faceLandmarks,
+      faceBlendshapes: sample.faceBlendshapes,
     }),
   };
 }
 
 export function proctoringCaptureLogMeta() {
-  return { ...mode, generatedAt: new Date().toISOString() };
+  return {
+    proctoring: 'mediapipe_eyeLook_horizontal_plus_head_yaw',
+    generatedAt: new Date().toISOString(),
+  };
 }

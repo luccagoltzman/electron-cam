@@ -16,7 +16,7 @@ const landmarkerOptions = (delegate: 'GPU' | 'CPU', modelAssetBuffer: Uint8Array
     } as const,
     runningMode: 'IMAGE' as const,
     numFaces: 1,
-    outputFaceBlendshapes: false,
+    outputFaceBlendshapes: true,
     outputFacialTransformationMatrixes: true,
     minFaceDetectionConfidence: 0.5,
     minFacePresenceConfidence: 0.5,
